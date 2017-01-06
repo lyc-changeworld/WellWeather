@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<litepal>
+    //数据库的名称
+    <dbname value="well_weather" ></dbname>
+    //数据库的版本号
+    <version value="1" ></version>
+    //将新创建的类映射到模型列表中去
+    <list>
+        <mapping class="com.example.achuan.wellweather.db.Province"></mapping>
+        <mapping class="com.example.achuan.wellweather.db.City"></mapping>
+        <mapping class="com.example.achuan.wellweather.db.County"></mapping>
+    </list>
+</litepal>
