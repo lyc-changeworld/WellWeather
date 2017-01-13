@@ -5,6 +5,8 @@ import android.text.TextUtils;
 import com.example.achuan.wellweather.db.City;
 import com.example.achuan.wellweather.db.County;
 import com.example.achuan.wellweather.db.Province;
+import com.example.achuan.wellweather.gson.Weather;
+import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -42,7 +44,6 @@ public class Utility {
         }
         return false;
     }
-
     /*2-解析和处理服务器返回的市级数据*/
     public static boolean handleCityResponse(String response,int provinceId){
         if(!TextUtils.isEmpty(response)){
@@ -69,7 +70,6 @@ public class Utility {
         }
         return false;
     }
-
     /*3-解析和处理服务器返回的县级数据*/
     public static boolean handleCountyResponse(String response,int cityId){
         if(!TextUtils.isEmpty(response)){
@@ -97,8 +97,22 @@ public class Utility {
         return false;
     }
 
-
-
-
+    /*4-解析天气JSON数据成Weather实体类对象*/
+    public static Weather handleWeatherResponse(String response){
+        try {
+            //先把JSON数据转换成JSONObject对象
+            JSONObject jsonObject=new JSONObject(response);
+            //获取"HeWeather5"字段下的内容,并存储到JOSN数组对象中
+            JSONArray jsonArray=jsonObject.getJSONArray("HeWeather5");
+            //由于"HeWeather5"数值中只有一个元素,这里提取第一个元素成分即可
+            String weatherInfo=jsonArray.getJSONObject(0).toString();
+            //利用Gson对象来将数据转换成Weather对象
+            Gson gson=new Gson();
+            return gson.fromJson(weatherInfo,Weather.class);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
 }

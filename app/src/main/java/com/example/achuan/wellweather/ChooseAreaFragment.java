@@ -1,6 +1,7 @@
 package com.example.achuan.wellweather;
 
 import android.app.Fragment;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -68,17 +69,11 @@ public class ChooseAreaFragment extends Fragment {
 
 
     /*1-为碎片创建视图（加载布局）时调用*/
-    @RequiresApi(api = Build.VERSION_CODES.M)
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.choose_area, container, false);
         ButterKnife.bind(this, view);
-        //创建一个列表数据适配器实例对象,传入了数据集合体和设置了显示风格
-        mAdapter=new ArrayAdapter<String>(getContext(),
-                android.R.layout.simple_list_item_1,mList);
-        //为列表对象添加适配器实例对象
-        mLvArea.setAdapter(mAdapter);
         return view;
     }
 
@@ -86,6 +81,11 @@ public class ChooseAreaFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        //创建一个列表数据适配器实例对象,传入了数据集合体和设置了显示风格
+        mAdapter=new ArrayAdapter<String>(getActivity(),
+                android.R.layout.simple_list_item_1,mList);
+        //为列表对象添加适配器实例对象
+        mLvArea.setAdapter(mAdapter);
         //Activity初次创建时执行省级数据的查询展示方法
         currentLevel=Constants.LEVEL_PROVINCE;
         queryProvinces();
@@ -109,6 +109,13 @@ public class ChooseAreaFragment extends Fragment {
                         break;
                     case Constants.LEVEL_COUNTY:
                         mCounty=mCountyList.get(position);
+                        //获取当前选中县的weather_id
+                        String weatherId=mCounty.getWeatherId();
+                        //启动一个意图跳转到天气显示界面,并将weather_id信息携带过去
+                        Intent intent=new Intent(getActivity(),WeatherActivity.class);
+                        intent.putExtra("weather_id",weatherId);
+                        startActivity(intent);
+                        getActivity().finish();
                         break;
                     default:break;
                 }
@@ -226,7 +233,7 @@ public class ChooseAreaFragment extends Fragment {
             mLvArea.setSelection(0);//刷新数据后将屏幕的首行item数据对到0数据位
         }else {
             //数据库中无数据可取,那就去网络端获取
-            queryFromServer(Constants.WEATHER_ADDRESS,currentLevel);
+            queryFromServer(Constants.GUO_LIN_WEATHER_ADDRESS,currentLevel);
         }
     }
     /*查询选中省内所有的"市",优先从数据库查询,如果没有再去服务器上查询*/
@@ -245,7 +252,7 @@ public class ChooseAreaFragment extends Fragment {
             mAdapter.notifyDataSetChanged();
             mLvArea.setSelection(0);
         }else {
-            queryFromServer(Constants.WEATHER_ADDRESS+
+            queryFromServer(Constants.GUO_LIN_WEATHER_ADDRESS +
                     "/"+provinceCode, currentLevel);
         }
     }
@@ -265,7 +272,7 @@ public class ChooseAreaFragment extends Fragment {
             mLvArea.setSelection(0);
         }else {
             int provinceCode=mProvince.getProvinceCode();
-            queryFromServer(Constants.WEATHER_ADDRESS+
+            queryFromServer(Constants.GUO_LIN_WEATHER_ADDRESS +
                     "/"+provinceCode+"/"+cityCode, currentLevel);
         }
     }
