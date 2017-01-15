@@ -18,12 +18,9 @@ package com.example.achuan.wellweather.gson;
  */
 
 public class Aqi {
-
     public class AqiCity{
         public String aqi;
         public String pm25;
     }
-
     public AqiCity city;
-
 }

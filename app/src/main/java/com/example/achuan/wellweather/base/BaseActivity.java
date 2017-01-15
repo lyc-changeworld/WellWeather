@@ -36,7 +36,6 @@ public abstract class BaseActivity extends AppCompatActivity {
         super.onDestroy();
         App.getInstance().removeActivity(this);
     }
-
     protected abstract int getLayout();//添加布局文件
     protected abstract void initEventAndData();//初始化事件及数据
 }

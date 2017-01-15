@@ -111,11 +111,18 @@ public class ChooseAreaFragment extends Fragment {
                         mCounty=mCountyList.get(position);
                         //获取当前选中县的weather_id
                         String weatherId=mCounty.getWeatherId();
-                        //启动一个意图跳转到天气显示界面,并将weather_id信息携带过去
-                        Intent intent=new Intent(getActivity(),WeatherActivity.class);
-                        intent.putExtra("weather_id",weatherId);
-                        startActivity(intent);
-                        getActivity().finish();
+                        if(getActivity()instanceof MainActivity){
+                            //启动一个意图跳转到天气显示界面,并将weather_id信息携带过去
+                            Intent intent=new Intent(getActivity(),WeatherActivity.class);
+                            intent.putExtra("weather_id",weatherId);
+                            startActivity(intent);
+                            getActivity().finish();
+                        }else if(getActivity()instanceof WeatherActivity){
+                            WeatherActivity activity= (WeatherActivity) getActivity();
+                            activity.mDrawLayout.closeDrawers();//关闭菜单栏
+                            activity.mSwipeRefresh.setRefreshing(true);//启动刷新动画
+                            activity.requestWeather(weatherId);//重新进行网络请求并更新内容显示
+                        }
                         break;
                     default:break;
                 }

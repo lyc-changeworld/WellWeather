@@ -1,8 +1,12 @@
 package com.example.achuan.wellweather;
 
 import android.os.Bundle;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -51,6 +55,14 @@ public class WeatherActivity extends BaseActivity {
     ScrollView mWeatherLayout;
     @BindView(R.id.iv_bingPic)
     ImageView mIvBingPic;
+    @BindView(R.id.swipe_refresh)
+    SwipeRefreshLayout mSwipeRefresh;
+    @BindView(R.id.bt_nav)
+    Button mBtNav;
+    @BindView(R.id.draw_layout)
+    DrawerLayout mDrawLayout;
+
+    private String mWeatherId;//用来记录当前选中的县的天气代号
 
 
     //添加布局文件
@@ -69,22 +81,41 @@ public class WeatherActivity extends BaseActivity {
             //将缓存的JOSN数据解析成weather对象
             Weather weather = Utility.handleWeatherResponse(weather_info);
             showWeatherInfo(weather);
+            mWeatherId = weather.basic.weatherId;
         } else {
             /*无缓存时去服务器查询天气*/
             //获取县城选择activity传递过来的县城天气代号
-            String weatherId = getIntent().getStringExtra("weather_id");
+            mWeatherId = getIntent().getStringExtra("weather_id");
             mWeatherLayout.setVisibility(View.INVISIBLE);//暂时先隐藏内容显示布局
-            requestWeather(weatherId);
+            requestWeather(mWeatherId);
         }
         /*必应图片加载的判断*/
-        String bingPic=SharedPreferenceUtil.getBingPicAddress();
-        if(bingPic!=null){//本地有缓存记录,直接加载显示图片
+        String bingPic = SharedPreferenceUtil.getBingPicAddress();
+        if (bingPic != null) {//本地有缓存记录,直接加载显示图片
             Glide.with(WeatherActivity.this).//传入上下文(Context|Activity|Fragment)
                     load(bingPic).//加载图片,传入(URL地址｜资源id｜本地路径)
                     into(mIvBingPic);//将图片设置到具体某一个IV中
-        }else {//本地无链接地址记录,进行网络请求来获取地址并加载显示
+        } else {//本地无链接地址记录,进行网络请求来获取地址并加载显示
             loadBingPic();
         }
+        /*刷新显示控件的初始化工作*/
+        mSwipeRefresh.setColorSchemeResources(R.color.colorAccent);//设置进度条的颜色
+        mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                requestWeather(mWeatherId);
+            }
+        });
+        /**/
+        mBtNav.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //打开滑动菜单栏
+                mDrawLayout.openDrawer(GravityCompat.START);
+            }
+        });
+
+
     }
 
     @Override
@@ -93,7 +124,7 @@ public class WeatherActivity extends BaseActivity {
     }
 
     /*1-将传入的weather对象进行处理并展示到布局中无*/
-    private void showWeatherInfo(Weather weather) {
+    public void showWeatherInfo(Weather weather) {
         /*从weather对象中获取我们想要的数据*/
         String cityName = weather.basic.cityName;
         //将更新日期如"2017-01-11 08:51" 按照" "符分段存储到数组中,这里分成了两部分,取后部分的内容来显示
@@ -133,6 +164,9 @@ public class WeatherActivity extends BaseActivity {
         if (weather.aqi != null) {
             mTvAqi.setText(weather.aqi.city.aqi);
             mTvPm25.setText(weather.aqi.city.pm25);
+        }else {
+            mTvAqi.setText("");
+            mTvPm25.setText("");
         }
         //显示生活建议信息
         mTvComfort.setText(comfort);
@@ -143,7 +177,8 @@ public class WeatherActivity extends BaseActivity {
     }
 
     /*2-根据列表界面点击后传入的weather_id来进行网络请求并存储获取到的JSON数据*/
-    private void requestWeather(String weatherId) {
+    public void requestWeather(String weatherId) {
+        mWeatherId=weatherId;//更新当前选中县的天气代号
         /*从新加载必应每日更新的图片*/
         loadBingPic();
         //先构建完整的网络资源访问地址
@@ -170,6 +205,10 @@ public class WeatherActivity extends BaseActivity {
                             Toast.makeText(WeatherActivity.this, "获取天气信息失败",
                                     Toast.LENGTH_SHORT).show();
                         }
+                        //如果在进行下拉刷新,则停止
+                        if (mSwipeRefresh.isRefreshing()) {
+                            mSwipeRefresh.setRefreshing(false);
+                        }
                     }
                 });
             }
@@ -181,6 +220,10 @@ public class WeatherActivity extends BaseActivity {
                     public void run() {
                         Toast.makeText(WeatherActivity.this, "获取天气信息失败",
                                 Toast.LENGTH_SHORT).show();
+                        //如果在进行下拉刷新,则停止
+                        if (mSwipeRefresh.isRefreshing()) {
+                            mSwipeRefresh.setRefreshing(false);
+                        }
                     }
                 });
             }
@@ -188,12 +231,12 @@ public class WeatherActivity extends BaseActivity {
     }
 
     /*3-加载必应每日一图的方法*/
-    private void loadBingPic(){
+    public void loadBingPic() {
         HttpUtil.sendOkHttpRequest(Constants.GUO_LIN_BING_PICTURE_ADDRESS, new Callback() {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 //获取到必应每日图片的链接地址
-                final String bingPic=response.body().string();
+                final String bingPic = response.body().string();
                 //存储地址到SP中
                 SharedPreferenceUtil.setBingPicAddress(bingPic);
                 runOnUiThread(new Runnable() {
@@ -205,6 +248,7 @@ public class WeatherActivity extends BaseActivity {
                     }
                 });
             }
+
             @Override
             public void onFailure(Call call, IOException e) {
                 e.printStackTrace();
