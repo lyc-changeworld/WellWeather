@@ -30,8 +30,11 @@ public class Constants {
     /*－－－－－－－－－－－－－－－SharedPreferences文件存储信息的键的名称－－－－－－－－－－－－－－－－－－*/
     public static final String SP_WEATHER_INFO="weather_info";
     public static final String SP_BING_PIC_ADDRESS="bing_pic_address";
+    public static final String SP_AUTO_UPDATE_TIME="weather_auto_update_time";
 
 
+    /*－－－－－－－－－－－－－－－一些使用到的固定常量－－－－－－－－－－－－－－－－－－－－－－*/
+    public static final int anHour=60*60*1000;//这是1小时的毫秒数
 
 
 }

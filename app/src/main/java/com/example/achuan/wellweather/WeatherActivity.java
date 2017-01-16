@@ -1,5 +1,7 @@
 package com.example.achuan.wellweather;
 
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -18,6 +20,7 @@ import com.example.achuan.wellweather.app.Constants;
 import com.example.achuan.wellweather.base.BaseActivity;
 import com.example.achuan.wellweather.gson.Forecast;
 import com.example.achuan.wellweather.gson.Weather;
+import com.example.achuan.wellweather.service.AutoUpdateService;
 import com.example.achuan.wellweather.util.HttpUtil;
 import com.example.achuan.wellweather.util.SharedPreferenceUtil;
 import com.example.achuan.wellweather.util.Utility;
@@ -96,7 +99,7 @@ public class WeatherActivity extends BaseActivity {
                     load(bingPic).//加载图片,传入(URL地址｜资源id｜本地路径)
                     into(mIvBingPic);//将图片设置到具体某一个IV中
         } else {//本地无链接地址记录,进行网络请求来获取地址并加载显示
-            loadBingPic();
+            loadBingPic(WeatherActivity.this,mIvBingPic);
         }
         /*刷新显示控件的初始化工作*/
         mSwipeRefresh.setColorSchemeResources(R.color.colorAccent);//设置进度条的颜色
@@ -106,16 +109,14 @@ public class WeatherActivity extends BaseActivity {
                 requestWeather(mWeatherId);
             }
         });
-        /**/
+        /*菜单按钮点击事件设置*/
         mBtNav.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //打开滑动菜单栏
+                //打开滑动菜单栏(按照菜单栏显示的方向,这里是系统文字的展示方向:从左到右)
                 mDrawLayout.openDrawer(GravityCompat.START);
             }
         });
-
-
     }
 
     @Override
@@ -123,7 +124,7 @@ public class WeatherActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
     }
 
-    /*1-将传入的weather对象进行处理并展示到布局中无*/
+    /*1-将传入的weather对象进行处理并展示到布局中*/
     public void showWeatherInfo(Weather weather) {
         /*从weather对象中获取我们想要的数据*/
         String cityName = weather.basic.cityName;
@@ -174,13 +175,16 @@ public class WeatherActivity extends BaseActivity {
         mTvSport.setText(sport);
         //待数据都加载显示好后将天气布局展露出来
         mWeatherLayout.setVisibility(View.VISIBLE);
+        /*启动后台服务,进行定时更新任务*/
+        Intent intent=new Intent(WeatherActivity.this, AutoUpdateService.class);
+        startService(intent);
     }
 
     /*2-根据列表界面点击后传入的weather_id来进行网络请求并存储获取到的JSON数据*/
     public void requestWeather(String weatherId) {
         mWeatherId=weatherId;//更新当前选中县的天气代号
         /*从新加载必应每日更新的图片*/
-        loadBingPic();
+        loadBingPic(WeatherActivity.this,mIvBingPic);
         //先构建完整的网络资源访问地址
         /*String weatherUrl= Constants.HEFENG_WEATHER_V5_ADDRESS+"weather?city="+weatherId+
                 "&key="+Constants.HEFENG_WEATHER_MY_KEY;*/
@@ -212,7 +216,6 @@ public class WeatherActivity extends BaseActivity {
                     }
                 });
             }
-
             @Override
             public void onFailure(Call call, IOException e) {
                 runOnUiThread(new Runnable() {
@@ -231,7 +234,7 @@ public class WeatherActivity extends BaseActivity {
     }
 
     /*3-加载必应每日一图的方法*/
-    public void loadBingPic() {
+    public void loadBingPic(final Context context, final ImageView ivBingPic) {
         HttpUtil.sendOkHttpRequest(Constants.GUO_LIN_BING_PICTURE_ADDRESS, new Callback() {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
@@ -242,13 +245,12 @@ public class WeatherActivity extends BaseActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Glide.with(WeatherActivity.this).//传入上下文(Context|Activity|Fragment)
+                        Glide.with(context).//传入上下文(Context|Activity|Fragment)
                                 load(bingPic).//加载图片,传入(URL地址｜资源id｜本地路径)
-                                into(mIvBingPic);//将图片设置到具体某一个IV中
+                                into(ivBingPic);//将图片设置到具体某一个IV中
                     }
                 });
             }
-
             @Override
             public void onFailure(Call call, IOException e) {
                 e.printStackTrace();
